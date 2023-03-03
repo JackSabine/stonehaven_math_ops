@@ -7,5 +7,5 @@ package multiplier_pkg;
   `include "multiplier_sequence.sv"
   `include "multiplier_agent.sv"
   `include "multiplier_env.sv"
-  `include "multiplier_basic_test.sv"
+  `include "multiplier_tests.sv"
 endpackage : multiplier_pkg

@@ -1,9 +1,11 @@
 // Typedef: multiplier_sequencer
-typedef uvm_sequencer #( multiplier_transaction ) multiplier_sequencer;
+typedef uvm_sequencer #(multiplier_transaction) multiplier_sequencer;
+
+
 
 // Class: multiplier_driver
-class multiplier_driver extends uvm_driver #( multiplier_transaction );
-  `uvm_component_utils( multiplier_driver )
+class multiplier_driver extends uvm_driver #(multiplier_transaction);
+  `uvm_component_utils(multiplier_driver)
 
   virtual multiplier_if mul_vi;
   
@@ -25,22 +27,44 @@ class multiplier_driver extends uvm_driver #( multiplier_transaction );
     end	
   endfunction : build_phase
 
+  // Task: reset_phase
+  task reset_phase(uvm_phase phase);
+    phase.raise_objection(.obj(this), .description(get_name()));
+    mul_vi.master_cb.rst_n <= 1'b1;
+    @mul_vi.master_cb;
+    mul_vi.master_cb.rst_n <= 1'b0;
+    @mul_vi.master_cb;
+    mul_vi.master_cb.rst_n <= 1'b1;
+    phase.drop_objection(.obj(this), .description(get_name()));
+  endtask : reset_phase
+
   // Task: main_phase
   task main_phase(uvm_phase phase);
     multiplier_transaction mul_tx;
 
     forever begin
       seq_item_port.get_next_item(mul_tx);
+      phase.raise_objection(.obj(this), .description(get_name()));
       @mul_vi.master_cb;
       mul_vi.master_cb.op_a <= mul_tx.op_a;
       mul_vi.master_cb.op_b <= mul_tx.op_b;
       mul_vi.master_cb.start <= 1'b1;
-      seq_item_port.item_done();
       @mul_vi.master_cb;
       mul_vi.master_cb.start <= 1'b0;
+      seq_item_port.item_done();
       phase.drop_objection(.obj(this), .description(get_name()));
     end
   endtask : main_phase
+
+  // Task: shutdown_phase
+  task shutdown_phase(uvm_phase phase);
+    super.shutdown_phase(phase);
+
+    phase.raise_objection(.obj(this), .description(get_name()));
+    repeat(3) @mul_vi.master_cb;
+    phase.drop_objection(.obj(this), .description(get_name()));
+  endtask : shutdown_phase
+
 endclass : multiplier_driver
 
 // Class: multiplier_monitor
@@ -73,26 +97,46 @@ class multiplier_monitor extends uvm_monitor;
   // Task: main_phase
   task main_phase(uvm_phase phase);
     multiplier_transaction mul_tx;
+    bit tx_in_progress;
 
-    forever begin
-      @mul_vi.slave_cb;
-      if (mul_vi.done == 1'b1) begin
-        mul_tx.result = mul_vi.master_cb.product;
-        mul_ap.write(mul_tx);
-        phase.drop_objection(.obj(this), .description(get_name()));
+    tx_in_progress = 1'b0;
+
+    fork
+      forever begin : tx_finisher
+        @mul_vi.master_cb;
+        if (mul_vi.master_cb.done == 1'b1) begin
+          if (tx_in_progress) begin
+            mul_tx.result = mul_vi.master_cb.product;
+            `uvm_info(get_name(), {"Finishing mul_Tx: ", mul_tx.convert2string()}, UVM_DEBUG)
+
+            mul_ap.write(mul_tx);
+            tx_in_progress = 1'b0;
+            phase.drop_objection(.obj(this), .description(get_name()));
+          end else begin
+            `uvm_error(get_name(), "Received done signal before start was sent");
+          end
+        end
       end
 
-      if (mul_vi.start == 1'b1) begin
-        phase.raise_objection(.obj(this), .description(get_name()));
-        mul_tx = multiplier_transaction::type_id::create(.name("mul_tx"));
-        mul_tx.op_a = mul_vi.slave_cb.op_a;
-        mul_tx.op_b = mul_vi.slave_cb.op_b;
+      forever begin : tx_starter
+        @mul_vi.slave_cb;
+        if (mul_vi.slave_cb.start == 1'b1) begin
+          phase.raise_objection(.obj(this), .description(get_name()));
+          tx_in_progress = 1'b1;
+
+          mul_tx = multiplier_transaction::type_id::create(.name("mul_tx"));
+          mul_tx.op_a = mul_vi.slave_cb.op_a;
+          mul_tx.op_b = mul_vi.slave_cb.op_b;
+          `uvm_info(get_name(), {"Starting mul_tx: ", mul_tx.convert2string()}, UVM_DEBUG)
+        end
       end
-    end // forever
+    join
   endtask : main_phase
 endclass : multiplier_monitor
 
-// CLass: multiplier_agent
+
+
+// Class: multiplier_agent
 class multiplier_agent extends uvm_agent;
   `uvm_component_utils(multiplier_agent)
 
@@ -126,3 +170,4 @@ class multiplier_agent extends uvm_agent;
   endfunction : connect_phase
 
 endclass : multiplier_agent
+

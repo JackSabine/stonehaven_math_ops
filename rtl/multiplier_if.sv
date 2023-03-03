@@ -17,7 +17,7 @@ interface multiplier_if(input bit clk);
   // Clocking block: slave_cb
   clocking slave_cb @(posedge clk);
     default input #1ns output #1ns;
-    input  op_a, op_b, rst_n, start;
+    input op_a, op_b, rst_n, start;
     output product, done;
   endclocking: slave_cb
 

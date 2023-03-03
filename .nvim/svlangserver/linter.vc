@@ -1,0 +1,7 @@
+-v /home/jsabine/Documents/Git_Repos/stonehaven_math_ops/dv/svtb/multiplier_pkg.sv
++incdir+/home/jsabine/Documents/Git_Repos/stonehaven_math_ops/dv/svtb
++incdir+/home/jsabine/Documents/Git_Repos/stonehaven_math_ops/dv/tests
++incdir+/home/jsabine/Documents/Git_Repos/stonehaven_math_ops/rtl
++incdir+/home/jsabine/Documents/Git_Repos/stonehaven_math_ops/dv/svtb
++incdir+/home/jsabine/Documents/Git_Repos/stonehaven_math_ops/dv/tests
++incdir+/home/jsabine/Documents/Git_Repos/stonehaven_math_ops/rtl

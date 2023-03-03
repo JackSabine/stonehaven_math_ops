@@ -1,11 +1,12 @@
 module top;
   import uvm_pkg::*;
+  import multiplier_pkg::*;
 
   localparam CLK_PER = 5;
 
   logic clk;
   multiplier_if mul_if(clk);
-  multiplier DUT (mul_if);
+  multiplier DUT (mul_if.slave_mp);
 
   initial begin
     clk = 1'b0;

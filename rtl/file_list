@@ -1,1 +1,2 @@
+${PROJECT_ROOT}/rtl/multiplier_if.sv
 ${PROJECT_ROOT}/rtl/multiplier.sv

@@ -9,16 +9,16 @@ WORKDIR := $(PROJECT_ROOT)/work
 COMPILE_LIST += -f $(PROJECT_ROOT)/rtl/file_list
 COMPILE_LIST += -f $(PROJECT_ROOT)/dv/file_list
 
-TB_TOP := multiplier_tb
+TB_TOP := top
 
 co: | work
 	cd $(WORKDIR)
 	xvlog $(COMPILE_LIST) -L uvm --sv
-	xelab -top $(TB_TOP) -snapshot $(TB_TOP)_snapshot -debug all -L uvm
+	xelab -top $(TB_TOP) -snapshot $(TB_TOP)_snapshot -debug all -L uvm --timescale 1ns/1ps
 
 so: | work
 	cd $(WORKDIR)
-	xsim $(TB_TOP)_snapshot -tclbatch $(PROJECT_ROOT)/xsim_cfg.tcl
+	xsim $(TB_TOP)_snapshot -tclbatch $(PROJECT_ROOT)/xsim_cfg.tcl -testplusarg "UVM_TESTNAME=multiplier_basic_test"
 
 sim: co so | work
 
@@ -31,5 +31,4 @@ work:
 
 clean:
 	rm -rf $(WORKDIR)
-	rm -rf xsim.dir
 
